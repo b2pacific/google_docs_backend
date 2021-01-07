@@ -15,7 +15,7 @@ const doc = new mongoose.Schema({
         type: Date,
         default: Date.now()
     }
-})
+});
 
-const model = mongoose.model("Doc", doc);
-export default model;
+const Doc = mongoose.model("Doc", doc);
+module.exports = Doc;
