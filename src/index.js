@@ -2,10 +2,12 @@ const app = require("express")();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
   },
 });
+
+require("dotenv")();
 
 const cors = require("cors");
 
@@ -17,7 +19,7 @@ const client = redis.createClient(6379);
 
 const mongoose = require("mongoose");
 
-const connect = mongoose.connect("mongodb://localhost:27017/google_docs", {
+const connect = mongoose.connect(process.env.DATABASE, {
   useNewUrlParser: true,
   useFindAndModify: false,
 });
@@ -58,17 +60,22 @@ io.on("connection", (socket) => {
   socket.on("new-operations", function (data) {
     const rooms = [...socket.rooms];
     if (rooms[1] === data.id) {
-      console.log("new-operations", data.id);
-      console.log("Value", data.value);
-      //console.log(data.value[0].children[0].text);
-      client.setex(data.id, 180, data.value[0].children[0].text);
+      // console.log("new-operations", data.id);
+      // console.log("Value", data.value);
+      // console.log(data.value[0].children[0].text);
+      let text = "";
+      for(let i = 0; i<data.value.length; i++) {
+        text = text + data.value[i].children[0].text + "\n";
+        // console.log(text);
+      }
+      client.setex(data.id, 180, text);
       io.to(data.id).emit("new-remote-operations", data);
     }
   });
 
   socket.on("disconnecting", function () {
     const rooms = [...socket.rooms];
-    console.log("disconnecting", rooms);
+    // console.log("disconnecting", rooms);
     if (rooms[1]) {
       client.get(rooms[1], (err, data) => {
         if (err) console.log(err);
